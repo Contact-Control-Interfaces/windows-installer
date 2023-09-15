@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension" xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+	<Bundle Name="Contact CI" Version="1.2.1.0" Manufacturer="Contact CI" UpgradeCode="9fb13f20-52c2-4a06-a69f-8a49c9ad982b" IconSourceFile="icon.ico" AboutUrl="https://contact.ci">
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense" >
+      <bal:WixStandardBootstrapperApplication LicenseFile="license.rtf" SuppressOptionsUI="yes" LogoFile="icon_64.png" />
+    </BootstrapperApplicationRef>
+
+    <util:RegistrySearch Root="HKLM" Key="SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full" Value="Version" Variable="Net4Version" />
+    
+		<Chain>
+      <ExePackage Id="Net48" Name="Microsoft .NET Framework 4.8 Setup" Cache="no" Compressed="yes" PerMachine="yes" Permanent="yes" Vital="yes"
+        InstallCommand="/q"
+        SourceFile="../ndp48-x86-x64-allos-enu.exe"
+        DetectCondition="Net4Version &gt;= v4.8.0"
+        InstallCondition="Net4Version &lt; v4.8.0"/>
+      
+      <MsiPackage Id="ServicePackage" SourceFile="../ContactCiServiceInstaller.msi" Vital="yes"/>
+		</Chain>
+	</Bundle>
+</Wix>
