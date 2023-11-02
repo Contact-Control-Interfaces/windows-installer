@@ -394,6 +394,7 @@ FodyWeavers.xsd
 *.cab
 *.msi
 !ContactCiServiceInstaller.msi
+!ContactCiManagerInstaller.msi
 *.msix
 *.msm
 *.msp
