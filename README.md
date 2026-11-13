@@ -55,6 +55,8 @@ The software is proprietary and distributed under the Contact CI End User Licens
 
 Questions and problems: support@contactci.co.
 
+Security problems: see [SECURITY.md](SECURITY.md).
+
 ## For maintainers
 
 The installer is a [WiX Toolset v3](https://github.com/wixtoolset/wix3/releases) bundle. It builds nothing from source: it wraps installers that other repositories produce.
