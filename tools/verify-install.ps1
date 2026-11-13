@@ -12,8 +12,8 @@
       2. the service ContactCiService is registered;
       3. after /uninstall, none of the three is listed and the service is gone.
 
-    Whether the service is running is reported, not required: on a machine
-    with no Bluetooth radio, such as a CI runner, it may not stay up.
+    Whether the service is running is reported, not required: on a GitHub
+    runner it is registered but does not stay running.
 
     It installs and removes software on this machine, so it needs an elevated
     prompt and belongs on a CI runner or a virtual machine. It refuses to run
@@ -80,30 +80,44 @@ if ($present.Count -gt 0 -or (Get-Service -Name $serviceName -ErrorAction Silent
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
 
 # --- Install -----------------------------------------------------------------
-Write-Step "Installing $Installer"
-Invoke-Installer @() (Join-Path $LogDirectory 'install.log')
+# Whatever the checks find, the installer is removed again afterwards, so a
+# failed run does not leave the machine with software the next run trips over.
+$checked = $false
+try {
+    Write-Step "Installing $Installer"
+    Invoke-Installer @() (Join-Path $LogDirectory 'install.log')
 
-$installed = @(Get-Installed)
-$installed | Sort-Object Name | Format-Table -AutoSize | Out-String | Write-Host
-$names = @($installed | ForEach-Object { $_.Name })
-foreach ($product in $products) {
-    if ($names -notcontains $product) { throw "'$product' is not listed as installed." }
-}
+    $installed = @(Get-Installed)
+    $installed | Sort-Object Name | Format-Table -AutoSize | Out-String | Write-Host
+    $names = @($installed | ForEach-Object { $_.Name })
+    foreach ($product in $products) {
+        if ($names -notcontains $product) { throw "'$product' is not listed as installed." }
+    }
 
-$service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
-if (-not $service) { throw "The service $serviceName is not registered." }
-for ($i = 0; $i -lt 20 -and $service.Status -ne 'Running'; $i++) {
-    Start-Sleep -Milliseconds 500
-    $service.Refresh()
+    $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+    if (-not $service) { throw "The service $serviceName is not registered." }
+    for ($i = 0; $i -lt 20 -and $service.Status -ne 'Running'; $i++) {
+        Start-Sleep -Milliseconds 500
+        $service.Refresh()
+    }
+    Write-Host "$serviceName is registered; status: $($service.Status)."
+    if ($service.Status -ne 'Running') {
+        Write-Warning "$serviceName is not running. This test does not require it to be; see the Service's log if that is unexpected on this machine."
+    }
+    $checked = $true
 }
-Write-Host "$serviceName is registered; status: $($service.Status)."
-if ($service.Status -ne 'Running') {
-    Write-Warning "$serviceName is not running. That is expected on a machine with no Bluetooth radio."
+finally {
+    # --- Remove --------------------------------------------------------------
+    Write-Step 'Removing it'
+    try {
+        Invoke-Installer @('/uninstall') (Join-Path $LogDirectory 'uninstall.log')
+    }
+    catch {
+        # A failed check above is the error to report; don't replace it.
+        if ($checked) { throw }
+        Write-Warning "Removal failed as well: $_"
+    }
 }
-
-# --- Remove ------------------------------------------------------------------
-Write-Step 'Removing it'
-Invoke-Installer @('/uninstall') (Join-Path $LogDirectory 'uninstall.log')
 
 $left = @(Get-Installed)
 if ($left.Count -gt 0) { throw "Still listed as installed after removal: $(@($left | ForEach-Object { $_.Name }) -join ', ')." }

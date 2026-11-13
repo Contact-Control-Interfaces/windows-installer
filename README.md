@@ -99,6 +99,7 @@ A release is built and signed by hand, because signing needs the company's code 
 3. Sign the installer. A WiX bundle is signed in two steps, the engine inside it first and then the bundle. With `insignia.exe` from WiX and `signtool.exe` from the Windows SDK:
 
    ```powershell
+   cd InstallerBootstrapper\bin\Release
    insignia -ib ContactCiInstaller.exe -o engine.exe
    signtool sign <certificate options> engine.exe
    insignia -ab engine.exe ContactCiInstaller.exe -o ContactCiInstaller.exe
