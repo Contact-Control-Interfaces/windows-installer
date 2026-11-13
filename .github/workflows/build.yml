@@ -1,0 +1,47 @@
+# =============================================================================
+# build
+# -----------------------------------------------------------------------------
+# Builds the bundled installer, installs it on the runner, and removes it
+# again. Runs on every pull request and on every push to main.
+#
+# Nothing is signed and nothing is published: the built installer is not kept.
+# A release is built and signed by hand; see "Release" in README.md.
+# =============================================================================
+name: build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+
+      # WiX Toolset v3 comes with the runner image.
+      - name: Build the installer
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Install it and remove it
+        shell: pwsh
+        run: ./tools/verify-install.ps1 -LogDirectory "$env:RUNNER_TEMP\installer-logs"
+
+      - name: Keep the installer's logs
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # v4.6.2
+        with:
+          name: installer-logs
+          path: ${{ runner.temp }}\installer-logs
+          if-no-files-found: ignore
+          retention-days: 7
