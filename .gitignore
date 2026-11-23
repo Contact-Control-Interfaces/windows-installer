@@ -401,3 +401,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# JetBrains Rider and IntelliJ settings
+.idea/
+
+# The .NET Framework 4.8 offline installer build.ps1 downloads
+ndp48-x86-x64-allos-enu.exe
